@@ -1,0 +1,422 @@
+from tkinter import *
+from tkinter import ttk,scrolledtext
+from tkinter import filedialog
+from tkinter.filedialog import asksaveasfilename
+import math
+from os import startfile 
+
+root = Tk() 
+root.title ("Online Classroom Aid Application")
+
+TabPage = ttk.Notebook()
+
+tab1=ttk.Frame(TabPage)
+tab2=ttk.Frame(TabPage)
+tab3=ttk.Frame(TabPage)
+tab4=ttk.Frame(TabPage)
+tab5=ttk.Frame(TabPage)
+
+TabPage.add(tab1, text='-- Text Mode --')
+TabPage.add(tab2, text='-- Paint Mode --')
+TabPage.add(tab3, text='-- Open File --')
+TabPage.add(tab4, text='-- Attendance --')
+TabPage.add(tab5, text='-- Calculator --')
+
+TabPage.pack(expand = YES, fill = BOTH)
+
+
+"""----------------------------------------------------------------------------------
+                                   Text Mode
+----------------------------------------------------------------------------------"""
+
+def save_file():                                            #Save the current file as a new file.   
+    filepath = filedialog.asksaveasfilename(
+        defaultextension="txt",                             # in the form of text file  (.txt)
+        filetypes=[("Text Files", ".txt"), ("All Files", ".*")],
+    )
+    if filepath:
+        with open(filepath, "w") as output_file:                # open new file in write mode
+            text = scr.get(1.0,END)                             # to assign written text to scrolltext 
+            output_file.write(text)
+
+fr_text = Frame(tab1, relief = RIDGE, bd = 8)                   #3-D effects 
+fr_text.pack(side = RIGHT, expand = YES, fill = BOTH) 
+
+scr = scrolledtext.ScrolledText(fr_text, width = 100, height = 40,wrap = WORD)      #Create a ScrolledText widget
+scr.pack(expand = YES, fill = BOTH)
+
+fr_button = Frame(tab1, relief = RIDGE, bd = 8)                 #3-D effects 
+fr_button.pack(side = LEFT, fill = BOTH) 
+
+btn_save = Button(fr_button, text="Save As...", command = save_file, relief = RAISED , borderwidth = 5, font = "Calibri 15")
+btn_save.pack()
+
+
+"""----------------------------------------------------------------------------------
+                                   Paint Mode
+----------------------------------------------------------------------------------"""
+
+frame_paint = Frame(tab2, borderwidth = 8, relief = RIDGE )
+frame_paint.pack(side = RIGHT, expand = YES, fill = BOTH)
+    
+cv = Canvas(frame_paint, width=640, height=480, bg='white')
+cv.pack(expand=YES, fill=BOTH)
+
+frame_erase = Frame(tab2, borderwidth = 8, relief = RIDGE )
+frame_erase.pack(side = LEFT, fill = BOTH)
+
+def activate_paint(e):
+    global lastx, lasty
+    lastx, lasty = e.x, e.y
+    cv.bind('<B1-Motion>', paint)
+        
+        
+def paint(e):
+    global lastx, lasty
+    x, y = e.x, e.y
+    cv.create_line((lastx, lasty, x, y), width=1)
+    lastx, lasty = x, y
+
+    
+def activate_eraser(e):
+    global lastx2, lasty2
+    lastx2, lasty2 = e.x, e.y
+    cv.bind('<B3-Motion>', eraser)
+        
+        
+def eraser(e):
+    global lastx2, lasty2
+    x, y = e.x, e.y
+    cv.create_rectangle(lastx2, lasty2, x, y, fill='white',width=30,outline='white')
+    lastx2, lasty2 = x, y
+    
+
+def erase_all() :
+    cv.delete('all')
+
+cv.bind('<Button-1>', activate_paint)
+cv.bind('<Button-3>', activate_eraser)
+    
+    
+action = Button(frame_erase, text="Erase all !", command = erase_all, relief = RAISED , borderwidth = 5, font = "Calibri 15")
+action.pack()
+
+
+"""----------------------------------------------------------------------------------
+                                   Open file
+----------------------------------------------------------------------------------"""
+os_str_var = StringVar()
+
+def get_value_os():
+    try:
+        get_os_input = os_str_var.get()
+        startfile(f"{get_os_input}")
+    except:
+        Label(tab3,text="The system cannot find the path specified. ", font = 'Calibri 20').pack()
+
+
+os_entry = Entry(tab3,textvariable=os_str_var, font = 'Calibri 20', relief = RAISED , borderwidth = 5).pack( fill = BOTH)
+os_button = Button(tab3,text="Open",command=get_value_os, font = 'Calibri 20',  relief = RAISED , borderwidth = 5).pack()
+
+
+"""----------------------------------------------------------------------------------
+                                   Attendance
+----------------------------------------------------------------------------------"""
+
+N_Students = IntVar()
+Absentee = ["Roll no - Attendance \n\n"]
+Roll_no = IntVar()
+Roll_no.set(1)
+
+frame_attendance = Frame(tab4)
+frame_attendance.grid()
+
+Label(frame_attendance, text="    ", font = 'Calibri 20').grid(column = 0, row = 0)
+Label(frame_attendance, text="Enter no of students: ", font = 'Calibri 20').grid(column = 1, row = 1)
+
+Student = Entry(frame_attendance, width = 12 , textvariable = N_Students, font = 'Calibri 20',  relief = RAISED , borderwidth = 5)
+Student.grid(column = 2,row=1)
+
+label=Label(frame_attendance, text=" ", font = 'Calibri 20')
+label.grid(column = 1, row = 4)
+
+def save_attendance():                                            #Save the current file as a new file.   
+    filepath = filedialog.asksaveasfilename(
+        defaultextension="doc",                             # in the form of text file  (.txt)
+        filetypes=[("Doc Files", ".doc"), ("All Files", ".*")],
+    )
+    if filepath:
+        with open(filepath, "w") as output_file:               
+            output_file.writelines(Absentee)
+
+def present(status):
+    global Roll_no
+    Absentee.append('{} - {} \n\n'.format(Roll_no.get(),status))
+    Roll_no.set(Roll_no.get() + 1)
+    if Roll_no.get() > N_Students.get():
+        frame_attendance.destroy()
+        save_attendance()
+        Label(tab4, text=" Attendance Saved", font = 'Calibri 20').grid()
+        
+    else:
+        label.config(text = "Roll no " + str(Roll_no.get()))   
+    
+    
+def GO():
+    global Roll_no
+    label.config(text = "Roll no "+str(Roll_no.get()))
+    Button(frame_attendance, text = 'Present', command = lambda :present("Present"), relief = RAISED , borderwidth = 5, font = "Calibri 15").grid(column = 2,row = 4)
+    Button(frame_attendance, text = 'Absent', command = lambda :present("Absent"), relief = RAISED , borderwidth = 5, font = "Calibri 15").grid(column = 3,row = 4)
+
+Button(frame_attendance, text="Go !", command = GO, relief = RAISED , borderwidth = 5, font = "Calibri 15").grid(column = 3,row = 1)
+
+
+"""----------------------------------------------------------------------------------
+                                   Calculator
+----------------------------------------------------------------------------------"""
+
+def calci():    
+    global actual, var
+    actual = ''
+    var = ""
+    
+    
+    def btn_isclicked(c):
+        global var,actual
+        var=var + c
+        actual = actual+c
+        data.set(var)
+    
+    def c_clicked():
+        global actual
+        global var
+        actual = actual[:-1]
+        var=var[:-1]
+        data.set(var)
+    
+    def ca_clicked():
+        global actual
+        global var
+        var=""
+        actual=0
+        actual=""
+        data.set(var)
+      
+    def per_clicked():
+        global actual
+        global var
+        actual = actual+'*0.01'
+        var=var + "%"
+        data.set(var)
+    
+    
+    def SINE():
+        global actual, var
+        actual = actual + 'math.sin(math.radians('
+        var = var + 'sin(('
+        data.set(var)
+    
+    def COS():
+        global actual, var
+        actual = actual + 'math.cos(math.radians('
+        var = var + 'cos(('
+        data.set(var)
+    
+    def TAN():
+        global actual, var
+        actual = actual + 'math.tan(math.radians('
+        var = var + 'tan(('
+        data.set(var)
+    
+    def FACT():
+        global actual, var
+        actual = actual + 'math.factorial('
+        var = var + 'fact('
+        data.set(var)
+    
+    def CEIL():
+        global actual, var
+        actual = actual + 'math.ceil('
+        var = var + 'ceil('
+        data.set(var)
+    
+    def PI():
+        global actual, var
+        actual = actual + 'math.pi'
+        var = var + 'pi'
+        data.set(var)
+    
+    def EXPO():
+        global actual, var
+        actual = actual + 'math.e'
+        var = var + 'e'
+        data.set(var)
+    
+    def POW():
+        global actual, var
+        actual = actual + '**'
+        var = var + '^'
+        data.set(var)
+    
+    def LOG():
+        global actual, var
+        actual = actual + 'math.log10('
+        var = var + 'log('
+        data.set(var)
+    
+    def SQRT():
+        global actual, var
+        actual = actual + 'math.sqrt('
+        var = var + 'sqrt('
+        data.set(var)
+    
+    def answer():
+        try : 
+            global var
+            global actual
+            ans=eval(actual)
+            actual=var=str(ans)
+            if len(var)>13:
+                var = var[:13]
+            data.set(var)   
+            
+        except SyntaxError:
+            data.set("ERROR")
+    
+    
+    def Second():
+        Frame1.destroy()
+        global Frame2
+        Frame2 = Frame(root2)
+        Frame2.pack()
+        row2 = Frame(Frame2)
+        row2.pack(expand=True, fill='both', )
+        row3 = Frame(Frame2)
+        row3.pack(expand=True, fill='both', )
+        row4 = Frame(Frame2)
+        row4.pack(expand=True, fill='both', )
+    
+        bracket1 = Button(Frame2, text=" (", command=lambda :btn_isclicked("("),font="Verdana 22")
+        bracket1.pack(side=LEFT,anchor="nw")
+        bracket2 = Button(Frame2, text=")", command=lambda :btn_isclicked(")"),font="Verdana 22")
+        bracket2.pack(side=LEFT,anchor="nw")
+        expo = Button(Frame2, text="  e  ", command=EXPO, font="Verdana 22")
+        expo.pack(side=LEFT, anchor="nw")
+        power = Button(Frame2, text="  ^  ", command=POW, font="Verdana 22")
+        power.pack(side=LEFT, anchor="nw")
+    
+        sin = Button(row3, text="sin(( ", command=SINE, font="Verdana 18")
+        sin.pack(side=LEFT, anchor="nw")
+        cos = Button(row3, text="cos((", command=COS, font="Verdana 18")
+        cos.pack(side=LEFT, anchor="nw")
+        tan = Button(row3, text="tan((", command=TAN, font="Verdana 18")
+        tan.pack(side=LEFT, anchor="nw")
+    
+        back = Button(row2, text="BACK", command=First, font="Verdana 18")
+        back.pack(side=LEFT, anchor="nw")
+        log = Button(row2, text=" log  ", command=LOG, font="Verdana 18")
+        log.pack(side=LEFT, anchor="nw")
+        sqrt = Button(row2, text=" sqrt ", command=SQRT, font="Verdana 18")
+        sqrt.pack(side=LEFT, anchor="nw")
+    
+        Fact = Button(row4, text="fact ", command=FACT, font="Verdana 22")
+        Fact.pack(side=LEFT, anchor="nw")
+        ceil = Button(row4, text="ceil ", command=CEIL, font="Verdana 22")
+        ceil.pack(side=LEFT, anchor="nw")
+        pi = Button(row4, text = 'π',command=PI, font="Verdana 22")
+        pi.pack(side=LEFT, anchor="nw")
+        dot = Button(row4, text=".", command=lambda :btn_isclicked("."), font="Verdana 22")
+        dot.pack(side=LEFT, anchor="nw")
+    
+    root2=Tk()
+    root2.geometry("250x400+300+300")
+    root2.resizable(False,False)
+    root2.title("Calculator")
+    global Frame1,Frame2
+    Frame1,Frame2=Frame(root2),Frame(root2)
+    
+    data=StringVar(root2)
+    lbl= Label(root2,anchor=SE,font="Verdana 22",textvariable=data,background="white",fg="black")
+    lbl.pack(expand=True,fill='both',)
+    
+    
+    def First():
+        global Frame1
+        Frame2.destroy()
+        Frame1 = Frame(root2)
+        Frame1.pack()
+        btnrow1=Frame(Frame1)
+        btnrow1.pack(expand=True,fill='both')
+        
+        btnrow2=Frame(Frame1)
+        btnrow2.pack(expand=True,fill='both')
+        
+        btnrow3=Frame(Frame1)
+        btnrow3.pack(expand=True,fill='both')
+        
+        btnrow4=Frame(Frame1)
+        btnrow4.pack(expand=True,fill='both')
+        
+        btnrow5=Frame(Frame1) 
+        btnrow5.pack(expand=True,fill='both')
+        
+        
+        btn_per=Button(btnrow5,text="  %",font="Verdana 22",border=0,relief=GROOVE,command=per_clicked)
+        btn_per.pack(side=LEFT,expand=True,fill='both')
+        btn_0=Button(btnrow5,text="  0",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("0"))
+        btn_0.pack(side=LEFT,expand=True,fill='both')
+        btn_dot=Button(btnrow5,text="  .",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("."))
+        btn_dot.pack(side=LEFT,expand=True,fill='both')
+        btn_eq=Button(btnrow5,text="  =",font="Verdana 22",border=0,relief=GROOVE,command=answer)
+        btn_eq.pack(side=LEFT,expand=True,fill='both')
+        
+        btn_1=Button(btnrow4,text="  1",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("1"))
+        btn_1.pack(side=LEFT,expand=True,fill='both')
+        btn_2=Button(btnrow4,text="   2",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("2"))
+        btn_2.pack(side=LEFT,expand=True,fill='both')
+        btn_3=Button(btnrow4,text="  3",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("3"))
+        btn_3.pack(side=LEFT,expand=True,fill='both')
+        btn_plus=Button(btnrow4,text="  +",font=("Verdana",22),border=0,relief=GROOVE,command=lambda :btn_isclicked("+"))
+        btn_plus.pack(side=LEFT,expand=True,fill='both')
+        
+        btn_4=Button(btnrow3,text="  4",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("4"))
+        btn_4.pack(side=LEFT,expand=True,fill='both')
+        btn_5=Button(btnrow3,text="   5",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("5"))
+        btn_5.pack(side=LEFT,expand=True,fill='both')
+        btn_6=Button(btnrow3,text="  6",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("6"))
+        btn_6.pack(side=LEFT,expand=True,fill='both')
+        btn_min=Button(btnrow3,text="  -",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("-"))
+        btn_min.pack(side=LEFT,expand=True,fill='both')
+        
+        btn_7=Button(btnrow2,text="  7",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("7"))
+        btn_7.pack(side=LEFT,expand=True,fill='both')
+        btn_8=Button(btnrow2,text="   8",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("8"))
+        btn_8.pack(side=LEFT,expand=True,fill='both')
+        btn_9=Button(btnrow2,text="  9",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("9"))
+        btn_9.pack(side=LEFT,expand=True,fill='both')
+        btn_mul=Button(btnrow2,text=" x",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("*"))
+        btn_mul.pack(side=LEFT,expand=True,fill='both')
+    
+        btn_ano=Button(btnrow1,text="Next",font="Verdana 22",border=0,relief=GROOVE,command=Second)
+        btn_ano.pack(side=LEFT,expand=True,fill='both')
+        btn_ca=Button(btnrow1,text="CA",font="Verdana 22",border=0,relief=GROOVE,command=ca_clicked)
+        btn_ca.pack(side=LEFT,expand=True,fill='both')
+        btn_c=Button(btnrow1,text="⌫",font="Verdana 22",border=0,relief=GROOVE,command=c_clicked)
+        btn_c.pack(side=LEFT,expand=True,fill='both')
+        btn_div=Button(btnrow1,text="  /",font="Verdana 22",border=0,relief=GROOVE,command=lambda :btn_isclicked("/"))
+        btn_div.pack(side=LEFT,expand=True,fill='both')
+    
+    
+    First()
+    
+    root2.mainloop()
+
+
+Button(tab5, text = "Launch Calculator", font = 'Calibri 20', command = calci, relief = RAISED , borderwidth = 5).pack()
+
+
+"""----------------------------------------------------------------------------------
+                                   
+----------------------------------------------------------------------------------"""
+
+root.mainloop()
